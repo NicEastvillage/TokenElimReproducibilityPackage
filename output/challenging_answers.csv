@@ -1,0 +1,4 @@
+;Tapaal;Static;Dynamic;ANY;ALL
+CTL ALL;503;550;623;782;343
+CTL Cardinality;225;243;317;375;165
+CTL Fireability;278;307;306;407;178

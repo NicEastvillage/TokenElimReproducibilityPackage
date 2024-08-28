@@ -1,0 +1,10 @@
+experiment\wrt;Tapaal;Static;Dynamic;category
+Tapaal;0;41;141;CTL ALL
+Static;88;0;137;CTL ALL
+Dynamic;261;210;0;CTL ALL
+Tapaal;0;19;50;CTL Cardinality
+Static;37;0;49;CTL Cardinality
+Dynamic;142;123;0;CTL Cardinality
+Tapaal;0;22;91;CTL Fireability
+Static;51;0;88;CTL Fireability
+Dynamic;119;87;0;CTL Fireability
