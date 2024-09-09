@@ -29,7 +29,7 @@ INPUT_CSVS = [
 BASE_NAME = 'Tapaal'
 
 
-def answers(df, file_prefix=''):
+def answers(df, file_postfix=''):
     rows = {
         'CTL ALL': df.category == 'CTL',
         'CTL Cardinality': (df.category == 'CTL') & (df.subcategory == 'Cardinality'),
@@ -41,12 +41,12 @@ def answers(df, file_prefix=''):
     res['ANY'] = {row: df.assign(answered=df.satisfied != 'unknown')[filt].groupby(CASE_IDS_COLS).answered.any().sum() for row, filt in rows.items()}
     res['ALL'] = {row: df.assign(answered=df.satisfied != 'unknown')[filt].groupby(CASE_IDS_COLS).answered.all().sum() for row, filt in rows.items()}
 
-    file = OUT_DIR / f'{file_prefix}answers.csv'
+    file = OUT_DIR / f'answers{file_postfix}.csv'
     res.to_csv(file, sep=';')
     print('▫ Created', file)
 
 
-def unique_answers(df, file_prefix=''):
+def unique_answers(df, file_postfix=''):
     def inner(idf):
         experiments = idf.experiment.unique().tolist()
         res = pd.DataFrame()
@@ -67,12 +67,12 @@ def unique_answers(df, file_prefix=''):
     }
     res = pd.concat([inner(df[filt]).reset_index(names=['experiment\\wrt']).assign(category=row) for row, filt in rows.items()]).reset_index(drop=True)
 
-    file = OUT_DIR / f'{file_prefix}unique_answers.csv'
+    file = OUT_DIR / f'answers_unique{file_postfix}.csv'
     res.to_csv(file, sep=';', index=False)
     print('▫ Created', file)
 
 
-def ratio_box_plot(df1, df2, parameter, none_value, limit, file_prefix=''):
+def ratio_box_plot(df1, df2, parameter, none_value, limit, file_postfix=''):
     df1_name = df1["experiment"].iloc[0]
     df2_name = df2["experiment"].iloc[0]
     x_name = 'queries, sorted by ratio'
@@ -127,12 +127,12 @@ def ratio_box_plot(df1, df2, parameter, none_value, limit, file_prefix=''):
     plt.tight_layout()
 
     # Save
-    file = OUT_DIR / f'{file_prefix}box_ratio_{parameter}_{df1_name}-{df2_name}.png'
+    file = OUT_DIR / f'box_ratio{file_postfix}_{parameter}_{df1_name}-{df2_name}.png'
     plt.savefig(file)
     print('▫ Created', file)
 
 
-def cactus(df, parameter, unit, query_prefix='', file_prefix=''):
+def cactus(df, parameter, unit, query_prefix='', file_postfix=''):
     df = df[df['satisfied'] != 'unknown']
 
     xlabel = f'#{query_prefix}queries answered'
@@ -152,12 +152,12 @@ def cactus(df, parameter, unit, query_prefix='', file_prefix=''):
     plt.tight_layout()
 
     # Save
-    file = OUT_DIR / f'{file_prefix}cactus_{parameter}.png'
+    file = OUT_DIR / f'cactus{file_postfix}_{parameter}.png'
     plt.savefig(file)
     print('▫ Created', file)
 
 
-def uniformity(dfs, group, group_name, filter=None):
+def uniformity(dfs, group, filter=None, file_postfix=''):
     PERCENTAGE = 0.03  # 1/32th of queries in group
     DECIMALS = 1
     FACTORS = [2.0, 10.0, 100.0]
@@ -191,8 +191,7 @@ def uniformity(dfs, group, group_name, filter=None):
                 values[factor] = ((qs_faster_per_model / queries_per_group) >= PERCENTAGE).sum()
         res[e] = values
 
-    prefix = '' if not group_name else group_name.lower().replace(' ', '_') + '_'
-    file = OUT_DIR / f'{prefix}uniformity_N={N}.csv'
+    file = OUT_DIR / f'uniformity{file_postfix}_N={N}.csv'
     res.to_csv(file, sep=';', index=False)
     print('▫ Created', file)
 
@@ -248,19 +247,19 @@ if __name__ == '__main__':
     print('✅ Dataset contains no errors')
 
     answers(df)
-    answers(df[df.challenging], file_prefix='challenging_')
+    answers(df[df.challenging], file_postfix='_challenging')
     unique_answers(df)
     cactus(df_w_min, 'time', 's')
     cactus(df, 'memory', 'MB')
-    cactus(df_w_min[df_w_min.challenging], 'time', 's', query_prefix='challenging ', file_prefix='challenging_')
-    cactus(df[df.challenging], 'memory', 'MB', query_prefix='challenging ', file_prefix='challenging_')
-    uniformity(dfs, 'model', 'all models', finished_by_some)
-    uniformity(dfs, 'family', 'all families', finished_by_some)
-    uniformity(dfs, 'model', 'challenging models', finished_by_some & challenging_model)
-    uniformity(dfs, 'family', 'challenging families', finished_by_some & challenging_family)
+    cactus(df_w_min[df_w_min.challenging], 'time', 's', query_prefix='challenging ', file_postfix='_challenging')
+    cactus(df[df.challenging], 'memory', 'MB', query_prefix='challenging ', file_postfix='_challenging')
+    uniformity(dfs, 'model', finished_by_some, file_postfix='_all_models')
+    uniformity(dfs, 'family', finished_by_some, file_postfix='_all_families')
+    uniformity(dfs, 'model', finished_by_some & challenging_model, file_postfix='_challenging_models')
+    uniformity(dfs, 'family', finished_by_some & challenging_family, file_postfix='_challenging_families')
     for i in range(len(dfs)):
         for j in range(i + 1, len(dfs)):
             (e1, df1), (e2, df2) = dfs[i], dfs[j]
-            ratio_box_plot(df1[df1.challenging], df2[df2.challenging], 'time', -1, TIME_LIMIT, file_prefix='challenging_')
-            ratio_box_plot(df1[df1.challenging], df2[df2.challenging], 'memory', float("nan"), MEMORY_LIMIT, file_prefix='challenging_')
+            ratio_box_plot(df1[df1.challenging], df2[df2.challenging], 'time', -1, TIME_LIMIT, file_postfix='_challenging')
+            ratio_box_plot(df1[df1.challenging], df2[df2.challenging], 'memory', float("nan"), MEMORY_LIMIT, file_postfix='_challenging')
     print('Done!')
