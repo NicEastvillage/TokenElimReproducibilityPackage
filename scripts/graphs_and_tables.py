@@ -135,7 +135,7 @@ def ratio_box_plot(df1, df2, parameter, none_value, limit, file_prefix=''):
 def cactus(df, parameter, unit, query_prefix='', file_prefix=''):
     df = df[df['satisfied'] != 'unknown']
 
-    xlabel = f'#{query_prefix}queries'
+    xlabel = f'#{query_prefix}queries answered'
     df = df.groupby('experiment').apply(lambda x: x.sort_values(parameter).reset_index(drop=True))
     df = df.reset_index(level=1, names=[None, xlabel]).reset_index(drop=True)
     df[xlabel] += 1
@@ -157,6 +157,47 @@ def cactus(df, parameter, unit, query_prefix='', file_prefix=''):
     print('▫ Created', file)
 
 
+def uniformity(dfs, group, group_name, filter=None):
+    PERCENTAGE = 0.03  # 1/32th of queries in group
+    DECIMALS = 1
+    FACTORS = [2.0, 10.0, 100.0]
+    FACTORS = list(map(lambda x: 1.0 / x, reversed(FACTORS))) + FACTORS
+
+    N = 0
+    dfs = dfs.copy()
+    for i, (e, df) in enumerate(dfs):
+        df = df[filter] if filter is not None else df
+        N = df[group].nunique()
+        df = df.replace({'time': -1}, float('inf'))
+        df.time = np.true_divide(np.ceil(df.time * (10 ** DECIMALS)), 10 ** DECIMALS)
+        df = df.set_index(CASE_IDS_COLS + ['family'])
+        dfs[i] = (e, df)
+
+    assert dfs[0][0] == BASE_NAME, f'The first dataframe is not {BASE_NAME}'
+    df_base = dfs[0][1]
+    dfs = dfs[1:]
+
+    queries_per_group = df_base.groupby(group).time.count()
+
+    res = pd.DataFrame()
+    for (e, df) in dfs:
+        values = dict()
+        for factor in FACTORS:
+            if factor <= 1.0:
+                qs_slower_per_model = ((df.time * factor) > df_base.time).groupby(group).sum()
+                values[factor] = ((qs_slower_per_model / queries_per_group) >= PERCENTAGE).sum()
+            if factor >= 1.0:
+                qs_faster_per_model = ((df.time * factor) < df_base.time).groupby(group).sum()
+                values[factor] = ((qs_faster_per_model / queries_per_group) >= PERCENTAGE).sum()
+        res[e] = values
+
+    prefix = '' if not group_name else group_name.lower().replace(' ', '_') + '_'
+    file = OUT_DIR / f'{prefix}uniformity_N={N}.csv'
+    res.to_csv(file, sep=';', index=False)
+    print('▫ Created', file)
+
+
+
 if __name__ == '__main__':
     dfs = [(e, pd.read_csv(csv, sep=';').assign(experiment=e)) for (e, csv) in INPUT_CSVS]
     for name, df in dfs:
@@ -176,8 +217,22 @@ if __name__ == '__main__':
     time_diff = reduce(operator.or_, [is_diff(df.replace({'time': -1}, float("inf"))['time'] / dfs[0][1].replace({'time': -1}, float("inf"))['time'], TIME_DIFF_THRESHOLD) for (_, df) in dfs], falses)
     memory_diff = reduce(operator.or_, [is_diff(df.replace({'memory': float("nan")}, float("inf"))['memory'] / dfs[0][1].replace({'memory': float("nan")}, float("inf"))['memory'], MEMORY_DIFF_THRESHOLD) for (_, df) in dfs], falses)
 
+    challenging = (time_diff & memory_diff) & (time_hard_for_some | memory_hard_for_some)
+
+    chldf = pd.DataFrame(zip(challenging, dfs[0][1].model, dfs[0][1].model.str.split('-').str[0]), columns=['challenging', 'model', 'family'])
+    challenging_model = pd.merge(dfs[0][1], chldf.groupby('model').challenging.any(), on='model').challenging
+    ms_per_fam = chldf.groupby(['model', 'family']).first().groupby('family').count().challenging
+    chl_per_fam = chldf.groupby(['model', 'family']).challenging.any().groupby('family').sum()
+    # A family is challenging if the majority (>=0.5) of instances is challenging
+    challenging_family = pd.merge(chldf, (chl_per_fam / ms_per_fam) >= 0.5, on='family').challenging_y
+
     for i, (e, df) in enumerate(dfs):
-        dfs[i] = (e, df.assign(challenging=(time_diff & memory_diff) & (time_hard_for_some | memory_hard_for_some)))
+        dfs[i] = (e, df.assign(
+            challenging=challenging,
+            challenging_model=challenging_model,
+            family=df.model.str.split('-').str[0],
+            challenging_family=challenging_family,
+        ))
 
     def min_df(e, df1, df2, parameter, none_value):
         df1_best_mask = df1.replace({parameter: none_value}, 1_000_000_000)[parameter] <= df2.replace({parameter: none_value}, 1_000_000_000)[parameter]
@@ -199,10 +254,13 @@ if __name__ == '__main__':
     cactus(df, 'memory', 'MB')
     cactus(df_w_min[df_w_min.challenging], 'time', 's', query_prefix='challenging ', file_prefix='challenging_')
     cactus(df[df.challenging], 'memory', 'MB', query_prefix='challenging ', file_prefix='challenging_')
+    uniformity(dfs, 'model', 'all models', finished_by_some)
+    uniformity(dfs, 'family', 'all families', finished_by_some)
+    uniformity(dfs, 'model', 'challenging models', finished_by_some & challenging_model)
+    uniformity(dfs, 'family', 'challenging families', finished_by_some & challenging_family)
     for i in range(len(dfs)):
         for j in range(i + 1, len(dfs)):
             (e1, df1), (e2, df2) = dfs[i], dfs[j]
             ratio_box_plot(df1[df1.challenging], df2[df2.challenging], 'time', -1, TIME_LIMIT, file_prefix='challenging_')
             ratio_box_plot(df1[df1.challenging], df2[df2.challenging], 'memory', float("nan"), MEMORY_LIMIT, file_prefix='challenging_')
-
     print('Done!')
