@@ -17,9 +17,9 @@ ENVS=""
 if [[ "$METHOD" == "tapaal" ]]; then
   ENVS=""
 elif [[ "$METHOD" == "dynamic" ]]; then
-  ENVS="env TAPAAL_TOKEN_ELIM=on"
+  ENVS="env TAPAAL_TOKEN_ELIM=on "
 elif [[ "$METHOD" == "static" ]]; then
-  ENVS="env TAPAAL_TOKEN_ELIM=on TAPAAL_TOKEN_ELIM_STATIC=on"
+  ENVS="env TAPAAL_TOKEN_ELIM=on TAPAAL_TOKEN_ELIM_STATIC=on "
 else
   echo "Unknown mode: Expect 'tapaal', 'dynamic', or 'static'"
   exit

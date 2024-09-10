@@ -7,7 +7,7 @@ if [ -z "$NAME" ] ; then
 	exit
 fi
 
-MODELS_DIR="../MCC2023"
+MODELS_DIR="../MCC2023-CTL"
 LOGS_DIR="../logs/$NAME"
 CSV="../data/$NAME.csv"
 rm -f $CSV
@@ -50,7 +50,7 @@ for MODEL in $(ls $MODELS_DIR) ; do
         fi
         TIME=$(grep -oP "Spent \K[^\s]*(?= in total)" <<< "$RAW" || echo "-1")
         VERIFY_TIME=$(grep -oP "Spent \K[^\s]*(?= on verification)" <<< "$RAW" || echo "-1")
-        MEMORY=$(grep "@@@[^,]*,\K[^@]*(?=@@@)" <<< "$RAW" | awk '{res=$1*1000}END{print res}')
+        MEMORY=$(grep -oP "@@@[^,]*,\K[^@]*(?=@@@)" <<< "$RAW" | awk '{res=$1*1000}END{print res}')
         SIMPLIFICATION=$(grep -q "Query solved by Query Simplification." <<< "$RAW" && echo "true" || echo "false")
         REACH=$(grep -q "discovered states:" <<< "$RAW" && echo "true" || echo "false")
         DISCOVERED=$(grep -oP "Configurations\s*: \K.*" <<< "$RAW" || grep -oP "discovered states:\s*\K.*" <<< "$RAW" || echo "0")
