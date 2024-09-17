@@ -177,18 +177,26 @@ def uniformity(dfs, group, filter=None, file_postfix=''):
     df_base = dfs[0][1]
     dfs = dfs[1:]
 
-    queries_per_group = df_base.groupby(group).time.count()
+    num_queries_per_group = df_base.groupby(group).time.count()
 
     res = pd.DataFrame()
     for (e, df) in dfs:
         values = dict()
         for factor in FACTORS:
             if factor <= 1.0:
-                qs_slower_per_model = ((df.time * factor) > df_base.time).groupby(group).sum()
-                values[factor] = ((qs_slower_per_model / queries_per_group) >= PERCENTAGE).sum()
+                num_qs_slower_per_group = ((df.time * factor) > df_base.time).groupby(group).sum()
+                values[factor] = ((num_qs_slower_per_group / num_queries_per_group) >= PERCENTAGE).sum()
             if factor >= 1.0:
-                qs_faster_per_model = ((df.time * factor) < df_base.time).groupby(group).sum()
-                values[factor] = ((qs_faster_per_model / queries_per_group) >= PERCENTAGE).sum()
+                num_qs_faster_per_group = ((df.time * factor) < df_base.time).groupby(group).sum()
+                values[factor] = ((num_qs_faster_per_group / num_queries_per_group) >= PERCENTAGE).sum()
+            if factor == 100.0 and group == 'model':
+                # # Find the number of families that the 2-orders-of-magnitude improvements are spread across
+                # num_qs_faster_per_group = ((df.time * factor) < df_base.time).groupby(group).sum()
+                # faster_models = num_qs_faster_per_group[num_qs_faster_per_group > 0].index.to_list()
+                # families = df_base.reset_index()[df_base.reset_index().model.isin(faster_models)].groupby('family').model.any().sum()
+                # print(e, families)
+                pass
+
         res[e] = values
 
     file = OUT_DIR / f'uniformity{file_postfix}_N={N}.csv'
@@ -236,12 +244,12 @@ if __name__ == '__main__':
     def min_df(e, df1, df2, parameter, none_value):
         df1_best_mask = df1.replace({parameter: none_value}, 1_000_000_000)[parameter] <= df2.replace({parameter: none_value}, 1_000_000_000)[parameter]
         _df = pd.concat([df1[df1_best_mask], df2[~df1_best_mask]])
-        _df.sort_index()
+        _df = _df.sort_index()
         return e, _df.assign(experiment=e)
 
-    df_min = min_df('min(Static,Dynamic)', dfs[1][1], dfs[2][1], 'time', -1)
+    edf_min = min_df('min(Static,Dynamic)', dfs[1][1], dfs[2][1], 'time', -1)
     df = pd.concat([df for e, df in dfs], ignore_index=True)
-    df_w_min = pd.concat([df for e, df in dfs + [df_min]], ignore_index=True)
+    df_w_min = pd.concat([df for e, df in dfs + [edf_min]], ignore_index=True)
 
     assert len(df[df.satisfied == 'error']) == 0, 'ERRORS DETECTED'
     print('✅ Dataset contains no errors')
@@ -253,10 +261,10 @@ if __name__ == '__main__':
     cactus(df, 'memory', 'MB')
     cactus(df_w_min[df_w_min.challenging], 'time', 's', query_prefix='challenging ', file_postfix='_challenging')
     cactus(df[df.challenging], 'memory', 'MB', query_prefix='challenging ', file_postfix='_challenging')
-    uniformity(dfs, 'model', finished_by_some, file_postfix='_all_models')
-    uniformity(dfs, 'family', finished_by_some, file_postfix='_all_families')
-    uniformity(dfs, 'model', finished_by_some & challenging_model, file_postfix='_challenging_models')
-    uniformity(dfs, 'family', finished_by_some & challenging_family, file_postfix='_challenging_families')
+    uniformity(dfs + [edf_min], 'model', finished_by_some, file_postfix='_all_models')
+    uniformity(dfs + [edf_min], 'family', finished_by_some, file_postfix='_all_families')
+    uniformity(dfs + [edf_min], 'model', finished_by_some & challenging_model, file_postfix='_challenging_models')
+    uniformity(dfs + [edf_min], 'family', finished_by_some & challenging_family, file_postfix='_challenging_families')
     for i in range(len(dfs)):
         for j in range(i + 1, len(dfs)):
             (e1, df1), (e2, df2) = dfs[i], dfs[j]
