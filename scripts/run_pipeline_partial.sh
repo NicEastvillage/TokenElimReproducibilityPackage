@@ -36,13 +36,13 @@ chmod u+x "$(dirname "$BIN")/"
 rm -rf $LOGS_DIR
 mkdir -p $LOGS_DIR
 
-# Run query 1 of every 50th model with a timeout of 10 minutes
-for MODEL in $(ls $MODELS_DIR | awk 'NR % 50 == 0') ; do
+# Run cardinality/fireability query 1 of every 10th model with a timeout of 15 minutes
+for MODEL in $(ls $MODELS_DIR | awk 'NR % 10 == 0') ; do
 
   for CATEGORY in "CTLCardinality" "CTLFireability"; do
 
     mkdir -p "$LOGS_DIR/$MODEL/$CATEGORY"
-    ./run_single.sh $NAME $BIN "$OPTIONS" $METHOD $MODEL $CATEGORY 1 10
+    ./run_single.sh $NAME $BIN "$OPTIONS" $METHOD $MODEL $CATEGORY 1 15
   done
 done
 

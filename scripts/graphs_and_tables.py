@@ -44,7 +44,7 @@ def answers(df, file_postfix=''):
 
     file = OUT_DIR / f'answers{file_postfix}.csv'
     res.to_csv(file, sep=';')
-    print('▫ Created', file)
+    print('▪ Created', file.name)
 
 
 def unique_answers(df, file_postfix=''):
@@ -70,14 +70,22 @@ def unique_answers(df, file_postfix=''):
 
     file = OUT_DIR / f'answers_unique{file_postfix}.csv'
     res.to_csv(file, sep=';', index=False)
-    print('▫ Created', file)
+    print('▪ Created', file.name)
 
 
 def ratio_box_plot(df1, df2, parameter, none_value, limit, file_postfix=''):
-    df1_name = df1["experiment"].iloc[0]
-    df2_name = df2["experiment"].iloc[0]
+    df1_name = df1["experiment"].iloc[0] if len(df1) > 0 else 'UNKNOWN'
+    df2_name = df2["experiment"].iloc[0] if len(df1) > 0 else 'UNKNOWN'
     x_name = 'queries, sorted by ratio'
     y_name = f'{parameter} ratio'
+
+    file = OUT_DIR / f'box_ratio{file_postfix}_{parameter}_{df1_name}-{df2_name}.png'
+    if len(df1) == 0:
+        print('⚠ Cannot create', file.name, 'since dataframe 1 is empty')
+        return
+    elif len(df2) == 0:
+        print('⚠ Cannot create', file.name, 'since dataframe 2 is empty')
+        return
 
     df1 = df1.set_index(CASE_IDS_COLS)
     df2 = df2.set_index(CASE_IDS_COLS)
@@ -128,9 +136,8 @@ def ratio_box_plot(df1, df2, parameter, none_value, limit, file_postfix=''):
     plt.tight_layout()
 
     # Save
-    file = OUT_DIR / f'box_ratio{file_postfix}_{parameter}_{df1_name}-{df2_name}.png'
     plt.savefig(file)
-    print('▫ Created', file)
+    print('▪ Created', file.name)
 
 
 def dashes_dict(df):
@@ -153,7 +160,12 @@ def dashes_dict(df):
 
 
 def cactus(df, parameter, unit, query_prefix='', file_postfix=''):
+    file = OUT_DIR / f'cactus{file_postfix}_{parameter}.png'
     df = df[df['satisfied'] != 'unknown']
+
+    if len(df) == 0:
+        print('⚠ Cannot create', file.name, 'since dataframe is empty')
+        return
 
     xlabel = f'#{query_prefix}queries answered'
     df = df.groupby('experiment').apply(lambda x: x.sort_values(parameter).reset_index(drop=True))
@@ -172,9 +184,8 @@ def cactus(df, parameter, unit, query_prefix='', file_postfix=''):
     plt.tight_layout()
 
     # Save
-    file = OUT_DIR / f'cactus{file_postfix}_{parameter}.png'
     plt.savefig(file)
-    print('▫ Created', file)
+    print('▪ Created', file.name)
 
 
 def uniformity(dfs, group, filter=None, file_postfix=''):
@@ -221,7 +232,7 @@ def uniformity(dfs, group, filter=None, file_postfix=''):
 
     file = OUT_DIR / f'uniformity{file_postfix}_N={N}.csv'
     res.to_csv(file, sep=';', index=False)
-    print('▫ Created', file)
+    print('▪ Created', file.name)
 
 
 def main(named_csvs):
@@ -274,7 +285,7 @@ def main(named_csvs):
         df_w_min = df
 
     assert len(df[df.satisfied == 'error']) == 0, 'ERRORS DETECTED'
-    print('✅ Dataset contains no errors')
+    print('❤ Dataset contains no errors')
 
     answers(df)
     answers(df[df.challenging], file_postfix='_challenging')

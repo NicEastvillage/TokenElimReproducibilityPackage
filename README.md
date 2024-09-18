@@ -32,7 +32,7 @@ Setup to construct graphs and tables:
 
 ### Reproduce data (full)
 
-*Expected run time: 200-300 days per method*
+*Expected run time: 200-300 days (per method)*
 
 Steps:
 
@@ -51,16 +51,16 @@ The time/memory limits can be found in `scripts/run_single.sh` (30 minutes and 1
 
 ### Reproduce data (partial)
 
-*Expected run time: 3 hours per method*
+*Expected run time: 5 hours (per method)*
 
 Steps:
 
 - Navigate to the `scripts/` directory: `cd scripts`
 - Run pipeline: `./run_pipeline_partial.sh <name> ../bin/verifypn-tokelim-linux64 <method>` where `<name>` is the desired name of the output, and `<method>` is either `tapaal`, `dynamic`, or `static`. We advice to include the method in the name too, e.g. 'ae_tapaal'.
   - This will produce a log file for each query at `logs/<name>/[model]/[category]/[query_index].log` and a csv file `data/<name>.csv` (semicolon separated) with all the extracted data.
-  - You can run the three methods in parallel using: `./run_pipeline_partial.sh ae_tapaal ../bin/verifypn-tokelim-linux64 tapaal & ./run_pipeline_partial.sh ae_dynamic ../bin/verifypn-tokelim-linux64 dynamic & ./run_pipeline_partial.sh ae_static ../bin/verifypn-tokelim-linux64 static &`
+  - You can run the three methods in parallel using: `./run_pipeline_partial.sh ae_tapaal ../bin/verifypn-tokelim-linux64 tapaal & ./run_pipeline_partial.sh ae_static ../bin/verifypn-tokelim-linux64 static & ./run_pipeline_partial.sh ae_dynamic ../bin/verifypn-tokelim-linux64 dynamic &`
 
-This partial pipeline runs the first query of the two CTL categories for every 50th model with a timeout of 10 minutes, a total of 56 queries.
+This partial pipeline runs the first query of the two CTL categories for every 10th model with a timeout of 15 minutes.
 Note that the shorter timeout may be a disadvantage for the dynamic and static token-elimination methods.
 
 ### Graphs and tables
@@ -75,7 +75,7 @@ Steps:
     given a series of arguments on the form 'name=file' where 'name' is the display name of the data and 'file' is
     the name of the file in `data/`. You must provide at least two data files and the first one must be named Tapaal
     as it will be used as the baseline for some graphs. Example:
-    `python graphs_and_tables.py Tapaal=ae_tapaal.csv Other=ae_other.csv`.
+    `python graphs_and_tables.py Tapaal=ae_tapaal.csv Static=ae_static.csv Dynamic=ae_dynamic.csv`.
 - Graphs and tables can now be found in `output/`.
 
 ## Licensing Information
