@@ -7,6 +7,11 @@ METHOD=$4
 MODEL=$5
 CAT=$6
 QUERY=$7
+TIMEOUT=$8
+
+if [ -z "$TIMEOUT" ] ; then
+	TIMEOUT=30
+fi
 
 MODELS_DIR="../MCC2023-CTL"
 LOGS_DIR="../logs/$NAME/$MODEL/$CAT"
@@ -25,7 +30,7 @@ else
   exit
 fi
 
-let "TIME=30*60"
+let "TIME=$TIMEOUT*60"
 let "MEM=15*1024*1024"
 ulimit -v $MEM
 

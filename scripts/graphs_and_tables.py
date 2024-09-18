@@ -1,5 +1,6 @@
 import math
 import operator
+import sys
 from functools import reduce
 from pathlib import Path
 
@@ -12,7 +13,7 @@ TIME_LIMIT = 1800  # Seconds
 TIME_THRESHOLD = 120  # Seconds
 TIME_DIFF_THRESHOLD = 0.01
 
-MEMORY_LIMIT = 15_000  # MB
+MEMORY_LIMIT = 15_728.640  # MB
 MEMORY_THRESHOLD = 1_000  # MB
 MEMORY_DIFF_THRESHOLD = 0.01
 
@@ -21,7 +22,7 @@ CASE_IDS_COLS = ['model', 'query', 'category', 'subcategory']
 DATA_DIR = Path(__file__).parent.parent / 'data'
 OUT_DIR = Path(__file__).parent.parent / 'output'
 
-INPUT_CSVS = [
+DEMO_CSVS = [
     ('Tapaal', DATA_DIR / 'demo_tapaal.csv'),
     ('Static', DATA_DIR / 'demo_static.csv'),
     ('Dynamic', DATA_DIR / 'demo_dynamic.csv'),
@@ -132,6 +133,25 @@ def ratio_box_plot(df1, df2, parameter, none_value, limit, file_postfix=''):
     print('▫ Created', file)
 
 
+def dashes_dict(df):
+    experiments = df.experiment.unique()
+    unused_dashes = [(2, 1), (1, 1, 1, 1, 3, 1)]
+    res = {'Tapaal': '', 'Dynamic': (4, 1), 'Static': (1, 1), 'min(Static,Dynamic)': (4, 1, 1, 1)}
+    if 'min(Static,Dynamic)' not in experiments:
+        unused_dashes.append(res['min(Static,Dynamic)'])
+        del res['min(Static,Dynamic)']
+    if 'Static' not in experiments:
+        unused_dashes.append(res['Static'])
+        del res['Static']
+    if 'Dynamic' not in experiments:
+        unused_dashes.append(res['Dynamic'])
+        del res['Dynamic']
+    for e in df.experiment:
+        if e not in res:
+            res[e] = unused_dashes.pop()
+    return res
+
+
 def cactus(df, parameter, unit, query_prefix='', file_postfix=''):
     df = df[df['satisfied'] != 'unknown']
 
@@ -143,7 +163,7 @@ def cactus(df, parameter, unit, query_prefix='', file_postfix=''):
     # Graph
     sns.set_theme(style='whitegrid', palette=sns.color_palette('tab10'))
     plt.tight_layout()
-    ax = sns.relplot(data=df, kind='line', x=xlabel, y=parameter, hue='experiment', style='experiment', dashes={'Tapaal': '', 'Dynamic': (4, 1), 'Static': (1, 1), 'min(Static,Dynamic)': (4, 1, 1, 1)}, height=3.0, aspect=1.0)
+    ax = sns.relplot(data=df, kind='line', x=xlabel, y=parameter, hue='experiment', style='experiment', dashes=dashes_dict(df), height=3.0, aspect=1.0)
     ax.set(yscale='log')
     plt.tight_layout()
     ax.set(ylim=[max(df[parameter].min(), 0.01), df[parameter].max() * 1.03])
@@ -204,14 +224,12 @@ def uniformity(dfs, group, filter=None, file_postfix=''):
     print('▫ Created', file)
 
 
-
-if __name__ == '__main__':
-    dfs = [(e, pd.read_csv(csv, sep=';').assign(experiment=e)) for (e, csv) in INPUT_CSVS]
+def main(named_csvs):
+    dfs = [(e, pd.read_csv(csv, sep=';').assign(experiment=e)) for (e, csv) in named_csvs]
     for name, df in dfs:
         df.loc[df['satisfied'] == 'unknown', 'memory'] = float("nan")
         df['memory'] = df['memory'] / 1_000_000  # Recorded in bytes, convert to MB
     N = len(dfs[0][1])
-    MEMORY_LIMIT = max(dfs[0][1]['memory'].max(), MEMORY_LIMIT)
 
     def is_diff(fractions, threshold):
         return (fractions >= (1.0 + threshold)) | (fractions <= (1.0 / (1.0 + threshold)))
@@ -247,9 +265,13 @@ if __name__ == '__main__':
         _df = _df.sort_index()
         return e, _df.assign(experiment=e)
 
-    edf_min = min_df('min(Static,Dynamic)', dfs[1][1], dfs[2][1], 'time', -1)
     df = pd.concat([df for e, df in dfs], ignore_index=True)
-    df_w_min = pd.concat([df for e, df in dfs + [edf_min]], ignore_index=True)
+    if len(dfs) > 2 and dfs[1][0] == 'Static' and dfs[2][0] == 'Dynamic':
+        edf_min = min_df('min(Static,Dynamic)', dfs[1][1], dfs[2][1], 'time', -1)
+        df_w_min = pd.concat([df for e, df in dfs + [edf_min]], ignore_index=True)
+    else:
+        edf_min = None
+        df_w_min = df
 
     assert len(df[df.satisfied == 'error']) == 0, 'ERRORS DETECTED'
     print('✅ Dataset contains no errors')
@@ -261,13 +283,33 @@ if __name__ == '__main__':
     cactus(df, 'memory', 'MB')
     cactus(df_w_min[df_w_min.challenging], 'time', 's', query_prefix='challenging ', file_postfix='_challenging')
     cactus(df[df.challenging], 'memory', 'MB', query_prefix='challenging ', file_postfix='_challenging')
-    uniformity(dfs + [edf_min], 'model', finished_by_some, file_postfix='_all_models')
-    uniformity(dfs + [edf_min], 'family', finished_by_some, file_postfix='_all_families')
-    uniformity(dfs + [edf_min], 'model', finished_by_some & challenging_model, file_postfix='_challenging_models')
-    uniformity(dfs + [edf_min], 'family', finished_by_some & challenging_family, file_postfix='_challenging_families')
+    uniformity(dfs + [edf_min] if edf_min is not None else dfs, 'model', finished_by_some, file_postfix='_all_models')
+    uniformity(dfs + [edf_min] if edf_min is not None else dfs, 'family', finished_by_some, file_postfix='_all_families')
+    uniformity(dfs + [edf_min] if edf_min is not None else dfs, 'model', finished_by_some & challenging_model, file_postfix='_challenging_models')
+    uniformity(dfs + [edf_min] if edf_min is not None else dfs, 'family', finished_by_some & challenging_family, file_postfix='_challenging_families')
     for i in range(len(dfs)):
         for j in range(i + 1, len(dfs)):
             (e1, df1), (e2, df2) = dfs[i], dfs[j]
             ratio_box_plot(df1[df1.challenging], df2[df2.challenging], 'time', -1, TIME_LIMIT, file_postfix='_challenging')
             ratio_box_plot(df1[df1.challenging], df2[df2.challenging], 'memory', float("nan"), MEMORY_LIMIT, file_postfix='_challenging')
     print('Done!')
+    exit(0)
+
+
+if __name__ == '__main__':
+    """
+    If no arguments are received, we use the demo csvs. Otherwise, we expect a series of arguments on the form
+    'name=file' where 'name' is the name of the data located in 'file', specifically `data/'file'`. Additionally,
+    there must be a least two arguments and the first name must be 'Tapaal'. Example:
+    `./python graphs_and_tables.py Tapaal=ae_tapaal.csv Dynamic=ae_dynamic.csv`.
+    """
+    if len(sys.argv) <= 1:
+        main(DEMO_CSVS)
+
+    else:
+        named_csvs = [(arg.split('=')[0], DATA_DIR / arg.split('=')[1]) for arg in sys.argv[1:]]
+        if named_csvs[0][0] != 'Tapaal':
+            print(f'First data file must be named \'Tapaal\' for the graphs to be generated correctly. Got \'{named_csvs[0][0]}\'')
+            exit(1)
+
+        main(named_csvs)

@@ -36,15 +36,13 @@ chmod u+x "$(dirname "$BIN")/"
 rm -rf $LOGS_DIR
 mkdir -p $LOGS_DIR
 
-for MODEL in $(ls $MODELS_DIR) ; do
+# Run query 1 of every 50th model with a timeout of 10 minutes
+for MODEL in $(ls $MODELS_DIR | awk 'NR % 50 == 0') ; do
 
   for CATEGORY in "CTLCardinality" "CTLFireability"; do
 
     mkdir -p "$LOGS_DIR/$MODEL/$CATEGORY"
-    Q_NUM=$(egrep -c "<property>" "$MODELS_DIR/$MODEL/$CATEGORY.xml")
-    for QUERY in $(seq 1 $Q_NUM) ; do
-      ./run_single.sh $NAME $BIN "$OPTIONS" $METHOD $MODEL $CATEGORY $QUERY
-    done
+    ./run_single.sh $NAME $BIN "$OPTIONS" $METHOD $MODEL $CATEGORY 1 10
   done
 done
 
