@@ -60,7 +60,7 @@ Steps:
   - This will produce a log file for each query at `logs/<name>/[model]/[category]/[query_index].log` and a csv file `data/<name>.csv` (semicolon separated) with all the extracted data.
   - (Recommended) You can run the three methods in parallel using: `./run_pipeline_partial.sh ae_tapaal ../bin/verifypn-tokelim-linux64 tapaal & ./run_pipeline_partial.sh ae_static ../bin/verifypn-tokelim-linux64 static & ./run_pipeline_partial.sh ae_dynamic ../bin/verifypn-tokelim-linux64 dynamic &`
 
-This partial pipeline runs the first query of the two CTL categories for every 20th model with a timeout of 10 minutes.
+This partial pipeline runs the first query of the two CTL categories for every 15th model with a timeout of 10 minutes.
 Note that the shorter timeout may be a disadvantage for the dynamic and static token-elimination methods.
 
 ### Graphs and tables
@@ -76,6 +76,7 @@ Steps:
     the name of the file in `data/`. You must provide at least two data files and the first one must be named Tapaal
     as it will be used as the baseline for some graphs. Example:
     `python graphs_and_tables.py Tapaal=ae_tapaal.csv Static=ae_static.csv Dynamic=ae_dynamic.csv`.
+  - Some deprecation warnings may appear. Those are expected.
 - Graphs and tables can now be found in `output/`.
 
 ## Licensing Information

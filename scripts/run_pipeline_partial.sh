@@ -39,10 +39,10 @@ mkdir -p $LOGS_DIR
 function process_queries() {
   local offset=$1
   local step=$2
-  local models=$(ls $MODELS_DIR)
+  local models=($MODELS_DIR/*)
 
   for (( i=offset; i<${#models[@]}; i+=step )); do
-    MODEL="${models[$i]}"
+    MODEL=$(basename "${models[$i]}")
     for CATEGORY in "CTLCardinality" "CTLFireability"; do
       mkdir -p "$LOGS_DIR/$MODEL/$CATEGORY"
       ./run_single.sh $NAME $BIN "$OPTIONS" $METHOD $MODEL $CATEGORY 1 10
