@@ -23,7 +23,7 @@ Setup permissions:
 - For the verifypn binary: `chmod u+x bin/*`
 
 Setup to reproduce data:
-- Extract models and queries: `tar -xvf MCC2023-CTL.tar.gz`
+- Extract models and queries: `tar -xvf MCC2023-CTL.tar.gz`  (*Expected run time: 3 minutes*)
 
 Setup to construct graphs and tables:
 - Setup Python virtual environment: `python -m venv .venv`
@@ -51,16 +51,16 @@ The time/memory limits can be found in `scripts/run_single.sh` (30 minutes and 1
 
 ### Reproduce data (partial)
 
-*Expected run time: 5 hours (per method)*
+*Expected run time: 8 hours (per method)*
 
 Steps:
 
 - Navigate to the `scripts/` directory: `cd scripts`
-- Run pipeline: `./run_pipeline_partial.sh <name> ../bin/verifypn-tokelim-linux64 <method>` where `<name>` is the desired name of the output, and `<method>` is either `tapaal`, `dynamic`, or `static`. We advice to include the method in the name too, e.g. 'ae_tapaal'.
+- Run pipeline: `./run_pipeline_partial.sh <name> ../bin/verifypn-tokelim-linux64 <method>` where `<name>` is the desired name of the output, and `<method>` is either `tapaal`, `dynamic`, or `static`. We advise to include the method in the name too, e.g. 'ae_tapaal'.
   - This will produce a log file for each query at `logs/<name>/[model]/[category]/[query_index].log` and a csv file `data/<name>.csv` (semicolon separated) with all the extracted data.
-  - You can run the three methods in parallel using: `./run_pipeline_partial.sh ae_tapaal ../bin/verifypn-tokelim-linux64 tapaal & ./run_pipeline_partial.sh ae_static ../bin/verifypn-tokelim-linux64 static & ./run_pipeline_partial.sh ae_dynamic ../bin/verifypn-tokelim-linux64 dynamic &`
+  - (Recommended) You can run the three methods in parallel using: `./run_pipeline_partial.sh ae_tapaal ../bin/verifypn-tokelim-linux64 tapaal & ./run_pipeline_partial.sh ae_static ../bin/verifypn-tokelim-linux64 static & ./run_pipeline_partial.sh ae_dynamic ../bin/verifypn-tokelim-linux64 dynamic &`
 
-This partial pipeline runs the first query of the two CTL categories for every 10th model with a timeout of 15 minutes.
+This partial pipeline runs the first query of the two CTL categories for every 20th model with a timeout of 10 minutes.
 Note that the shorter timeout may be a disadvantage for the dynamic and static token-elimination methods.
 
 ### Graphs and tables

@@ -36,14 +36,25 @@ chmod u+x "$(dirname "$BIN")/"
 rm -rf $LOGS_DIR
 mkdir -p $LOGS_DIR
 
-# Run cardinality/fireability query 1 of every 10th model with a timeout of 15 minutes
-for MODEL in $(ls $MODELS_DIR | awk 'NR % 10 == 0') ; do
+function process_queries() {
+  local offset=$1
+  local step=$2
+  local models=$(ls $MODELS_DIR)
 
-  for CATEGORY in "CTLCardinality" "CTLFireability"; do
-
-    mkdir -p "$LOGS_DIR/$MODEL/$CATEGORY"
-    ./run_single.sh $NAME $BIN "$OPTIONS" $METHOD $MODEL $CATEGORY 1 15
+  for (( i=offset; i<${#models[@]}; i+=step )); do
+    MODEL="${models[$i]}"
+    for CATEGORY in "CTLCardinality" "CTLFireability"; do
+      mkdir -p "$LOGS_DIR/$MODEL/$CATEGORY"
+      ./run_single.sh $NAME $BIN "$OPTIONS" $METHOD $MODEL $CATEGORY 1 10
+    done
   done
-done
+}
+
+# Every 15th model, 3 processes in parallel
+process_queries 0 45 &
+process_queries 15 45 &
+process_queries 30 45 &
+
+wait
 
 ./extract.sh $NAME
