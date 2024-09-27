@@ -51,7 +51,7 @@ The time/memory limits can be found in `scripts/run_single.sh` (30 minutes and 1
 
 ### Reproduce data (partial)
 
-*Expected run time: 8 hours (per method)*
+*Expected run time: 6 hours (per method)*
 
 Steps:
 
@@ -65,7 +65,7 @@ Note that the shorter timeout may be a disadvantage for the dynamic and static t
 
 ### Graphs and tables
 
-*Expected run time: 10 seconds*
+*Expected run time: 20 seconds*
 
 Steps:
 

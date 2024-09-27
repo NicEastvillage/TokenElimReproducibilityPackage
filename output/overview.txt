@@ -1,0 +1,34 @@
+#queries: 45632
+#queries answered by some: 32551
+#queries containing reachability: 19698
+#challenging queries: 13863
+#challenging queries answered by some: 782
+#challenging queries containing reachability: 5955
+#models: 1426
+#families: 131
+#challenging models: 329
+#challenging families: 27
+--- Tapaal:
+#configs explored total: 31_026_941_114
+#configs explored mean: 679_938
+#queries with any token elimination: 0
+#tokens removed total: 0
+#tokens removed mean: 0
+#tokens removed on challenging queries total: 0
+#tokens removed on challenging queries mean: 0
+--- Static:
+#configs explored total: 30_866_040_813
+#configs explored mean: 676_412
+#queries with any token elimination: 2672
+#tokens removed total: 430_649_650_372
+#tokens removed mean: 9_437_448
+#tokens removed on challenging queries total: 405_285_141_243
+#tokens removed on challenging queries mean: 29_235_024
+--- Dynamic:
+#configs explored total: 27_016_517_260
+#configs explored mean: 592_052
+#queries with any token elimination: 4226
+#tokens removed total: 461_372_761_616
+#tokens removed mean: 10_110_728
+#tokens removed on challenging queries total: 410_996_171_782
+#tokens removed on challenging queries mean: 29_646_986

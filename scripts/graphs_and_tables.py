@@ -89,7 +89,7 @@ def ratio_box_plot(df1, df2, parameter, none_value, limit, file_postfix=''):
 
     df1 = df1.set_index(CASE_IDS_COLS)
     df2 = df2.set_index(CASE_IDS_COLS)
-    _either = (df1[parameter] != none_value) | (df2[parameter] != none_value)
+    _either = (df1.satisfied != 'unknown') | (df2.satisfied != 'unknown')
     df1 = df1[_either]
     df2 = df2[_either]
 
@@ -117,6 +117,11 @@ def ratio_box_plot(df1, df2, parameter, none_value, limit, file_postfix=''):
 
     # Combine
     df = pd.concat([df_inf, df_lim]).reset_index(drop=True)
+    def to_factor(x):
+        return x / (1 - x)
+
+    def to_factor_inv(x):
+        return x / (x + 1)
 
     # Display
     sns.set_theme(style='whitegrid', palette=sns.color_palette('tab10'))
@@ -131,6 +136,9 @@ def ratio_box_plot(df1, df2, parameter, none_value, limit, file_postfix=''):
     g.ax.set_yticks(np.arange(0, 1.01, 0.1))
     g.ax.set_xticks(np.arange(-46000, 46000, 10 ** math.floor(math.log10(len(series_inf)))))
     g.set(ylim=(-0.005, 1.005), xlim=(-x_offset, len(series_inf) - x_offset))
+    ax2 = g.ax.secondary_yaxis('right', functions=(to_factor, to_factor_inv))
+    ax2.set_ylabel('factor')
+    ax2.set_yticks([100, 10, 2, 1, 0.5, 0.1, 0.01], ['100', '10', '2', '1', '0.5', '0.1', '0.01'])
     g._legend.remove()
     #plt.legend(loc='lower right', title='Value of unanswered', framealpha=1.0)
     plt.tight_layout()
@@ -236,6 +244,7 @@ def uniformity(dfs, group, filter=None, file_postfix=''):
 
 
 def main(named_csvs):
+    formulae = pd.read_csv(DATA_DIR / 'formulae.csv', sep=';')
     dfs = [(e, pd.read_csv(csv, sep=';').assign(experiment=e)) for (e, csv) in named_csvs]
     for name, df in dfs:
         df.loc[df['satisfied'] == 'unknown', 'memory'] = float("nan")
@@ -253,14 +262,17 @@ def main(named_csvs):
     time_diff = reduce(operator.or_, [is_diff(df.replace({'time': -1}, float("inf"))['time'] / dfs[0][1].replace({'time': -1}, float("inf"))['time'], TIME_DIFF_THRESHOLD) for (_, df) in dfs], falses)
     memory_diff = reduce(operator.or_, [is_diff(df.replace({'memory': float("nan")}, float("inf"))['memory'] / dfs[0][1].replace({'memory': float("nan")}, float("inf"))['memory'], MEMORY_DIFF_THRESHOLD) for (_, df) in dfs], falses)
 
-    challenging = (time_diff & memory_diff) & (time_hard_for_some | memory_hard_for_some)
+    challenging = ((time_diff & memory_diff) | -finished_by_some) & (time_hard_for_some | memory_hard_for_some)
+
+    CHALL_QS_REQ_FOR_MODEL_TO_BE_CHALL = 16
+    CHALL_FRAC_OF_MODELS_REQ_FOR_FAM_TO_BE_CHALL = 0.5
 
     chldf = pd.DataFrame(zip(challenging, dfs[0][1].model, dfs[0][1].model.str.split('-').str[0]), columns=['challenging', 'model', 'family'])
-    challenging_model = pd.merge(dfs[0][1], chldf.groupby('model').challenging.any(), on='model').challenging
+    chlms = chldf.groupby('model').challenging.sum() >= CHALL_QS_REQ_FOR_MODEL_TO_BE_CHALL
+    challenging_model = chldf.model.apply(lambda x: chlms[x])
     ms_per_fam = chldf.groupby(['model', 'family']).first().groupby('family').count().challenging
-    chl_per_fam = chldf.groupby(['model', 'family']).challenging.any().groupby('family').sum()
-    # A family is challenging if the majority (>=0.5) of instances is challenging
-    challenging_family = pd.merge(chldf, (chl_per_fam / ms_per_fam) >= 0.5, on='family').challenging_y
+    chl_per_fam = chldf[['model', 'family']].groupby('model').first().reset_index().groupby('family').model.apply(lambda x: chlms[x]).droplevel(1).groupby('family').sum().rename('challenging')
+    challenging_family = pd.merge(chldf, (chl_per_fam / ms_per_fam) >= CHALL_FRAC_OF_MODELS_REQ_FOR_FAM_TO_BE_CHALL, on='family').challenging_y
 
     for i, (e, df) in enumerate(dfs):
         dfs[i] = (e, df.assign(
@@ -303,6 +315,26 @@ def main(named_csvs):
             (e1, df1), (e2, df2) = dfs[i], dfs[j]
             ratio_box_plot(df1[df1.challenging], df2[df2.challenging], 'time', -1, TIME_LIMIT, file_postfix='_challenging')
             ratio_box_plot(df1[df1.challenging], df2[df2.challenging], 'memory', float("nan"), MEMORY_LIMIT, file_postfix='_challenging')
+    with open(OUT_DIR / 'overview.txt', 'w') as f:
+        f.write(f'#queries: {len(dfs[0][1])}\n')
+        f.write(f'#queries answered by some: {finished_by_some.sum()}\n')
+        f.write(f'#queries containing reachability: {formulae["contains reachability"].sum()}\n')
+        f.write(f'#challenging queries: {challenging.sum()}\n')
+        f.write(f'#challenging queries answered by some: {(challenging & finished_by_some).sum()}\n')
+        f.write(f'#challenging queries containing reachability: {formulae.loc[challenging, "contains reachability"].sum()}\n')
+        f.write(f'#models: {len(dfs[0][1].groupby("model").first())}\n')
+        f.write(f'#families: {len(dfs[0][1].groupby("family").first())}\n')
+        f.write(f'#challenging models: {(chldf.groupby("model").challenging.sum() >= CHALL_QS_REQ_FOR_MODEL_TO_BE_CHALL).sum()}\n')
+        f.write(f'#challenging families: {((chl_per_fam / ms_per_fam) >= CHALL_FRAC_OF_MODELS_REQ_FOR_FAM_TO_BE_CHALL).sum()}\n')
+        for e, df in dfs:
+            f.write(f'--- {e}:\n')
+            f.write(f'#configs explored total: {df.explored.sum():_}\n')
+            f.write(f'#configs explored mean: {int(df.explored.mean()):_}\n')
+            f.write(f'#queries with any token elimination: {(df["tokens extrapolated"] > 0).sum()}\n')
+            f.write(f'#tokens removed total: {df["tokens extrapolated"].sum():_}\n')
+            f.write(f'#tokens removed mean: {int(df["tokens extrapolated"].mean()):_}\n')
+            f.write(f'#tokens removed on challenging queries total: {df.loc[challenging, "tokens extrapolated"].sum():_}\n')
+            f.write(f'#tokens removed on challenging queries mean: {int(df.loc[challenging, "tokens extrapolated"].mean()):_}\n')
     print('Done!')
     exit(0)
 
