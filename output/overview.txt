@@ -3,7 +3,7 @@
 #queries containing reachability: 19698
 #challenging queries: 13863
 #challenging queries answered by some: 782
-#challenging queries containing reachability: 5955
+#challenging queries containing reachability: 7850
 #models: 1426
 #families: 131
 #challenging models: 329

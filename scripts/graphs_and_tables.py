@@ -244,11 +244,12 @@ def uniformity(dfs, group, filter=None, file_postfix=''):
 
 
 def main(named_csvs):
-    formulae = pd.read_csv(DATA_DIR / 'formulae.csv', sep=';')
-    dfs = [(e, pd.read_csv(csv, sep=';').assign(experiment=e)) for (e, csv) in named_csvs]
+    formulae = pd.read_csv(DATA_DIR / 'formulae.csv', sep=';').sort_values(CASE_IDS_COLS, ignore_index=True)
+    dfs = [(e, pd.read_csv(csv, sep=';').assign(experiment=e).sort_values(CASE_IDS_COLS, ignore_index=True)) for (e, csv) in named_csvs]
     for name, df in dfs:
         df.loc[df['satisfied'] == 'unknown', 'memory'] = float("nan")
         df['memory'] = df['memory'] / 1_000_000  # Recorded in bytes, convert to MB
+        assert len(formulae) == len(df), 'Experiment does not contain entries for all queries'
     N = len(dfs[0][1])
 
     def is_diff(fractions, threshold):
@@ -321,7 +322,7 @@ def main(named_csvs):
         f.write(f'#queries containing reachability: {formulae["contains reachability"].sum()}\n')
         f.write(f'#challenging queries: {challenging.sum()}\n')
         f.write(f'#challenging queries answered by some: {(challenging & finished_by_some).sum()}\n')
-        f.write(f'#challenging queries containing reachability: {formulae.loc[challenging, "contains reachability"].sum()}\n')
+        f.write(f'#challenging queries containing reachability: {formulae.loc[challenging.reindex(np.arange(0, len(formulae)), fill_value=False), "contains reachability"].sum()}\n')
         f.write(f'#models: {len(dfs[0][1].groupby("model").first())}\n')
         f.write(f'#families: {len(dfs[0][1].groupby("family").first())}\n')
         f.write(f'#challenging models: {(chldf.groupby("model").challenging.sum() >= CHALL_QS_REQ_FOR_MODEL_TO_BE_CHALL).sum()}\n')
