@@ -19,15 +19,21 @@ The package was tested using WSL2 and [TACAS'23 AE VM](https://zenodo.org/record
 
 *Expected run time: 4 minutes (shorter on subsequent runs)*
 
-Run `./scripts/setup.sh`
+Steps:
+
+- Run `chmod +x scripts/*`
+- Optionally set up a Python virtual environment:
+  - `python3 -m venv venv`
+  - `source venv/bin/activate`
+- Run `./scripts/setup.sh` (*Expected run time: 4 minutes*)
 
 ### Test pipeline (Short early review)
 
-*Expected run time: 20 minutes*
+*Expected run time: 2 minutes*
 
 Run `./scripts/run_mini.sh`
 
-This pipeline is intended for verifying that the artifact works.
+This pipeline is intended for verifying that the binary and bash files work.
 The pipeline only runs a few queries in total and will not produce meaningful results.
 
 ### Reproduce data (full)
@@ -61,12 +67,12 @@ Note that the shorter timeout may be a disadvantage for the dynamic and static t
 
 Steps:
 
-- Run `python scripts/graphs_and_tables.py`
+- Run `python3 scripts/graphs_and_tables.py`
   - By default, the demo data (the data used in the paper) is used. To use your own data, the Python script must be
     given a series of arguments on the form 'name=file' where 'name' is the display name of the data and 'file' is
     the name of the file in `data/`. You must provide at least two data files and the first one must be named Tapaal
     as it will be used as the baseline for some graphs. Example:
-    `python graphs_and_tables.py Tapaal=ae_tapaal.csv Static=ae_static.csv Dynamic=ae_dynamic.csv`.
+    `python3 graphs_and_tables.py Tapaal=ae_tapaal.csv Static=ae_static.csv Dynamic=ae_dynamic.csv`.
   - Some deprecation warnings may appear. Those are expected.
 - Graphs and tables can now be found in `output/`.
 

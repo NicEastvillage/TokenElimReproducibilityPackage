@@ -67,4 +67,4 @@ for MODEL in $(ls $MODELS_DIR) ; do
   done
 done
 
-echo "Done"
+echo "Done extracting '$NAME' data"
