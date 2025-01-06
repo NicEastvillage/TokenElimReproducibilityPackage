@@ -258,6 +258,7 @@ def main(named_csvs):
 
     falses = pd.Series([False] * N)
     finished_by_some = reduce(operator.or_, [df['satisfied'] != 'unknown' for (_, df) in dfs], falses)
+    finished_by_all = reduce(operator.and_, [df['satisfied'] != 'unknown' for (_, df) in dfs], pd.Series([True] * N))
     time_hard_for_some = reduce(operator.or_, [df.replace({'time': -1}, TIME_LIMIT)['time'] >= TIME_THRESHOLD for (_, df) in dfs], falses)
     memory_hard_for_some = reduce(operator.or_, [df.replace({'memory': float("nan")}, MEMORY_LIMIT)['memory'] >= MEMORY_THRESHOLD for (_, df) in dfs], falses)
     time_diff = reduce(operator.or_, [is_diff(df.replace({'time': -1}, float("inf"))['time'] / dfs[0][1].replace({'time': -1}, float("inf"))['time'], TIME_DIFF_THRESHOLD) for (_, df) in dfs], falses)
@@ -331,6 +332,10 @@ def main(named_csvs):
             f.write(f'--- {e}:\n')
             f.write(f'#configs explored total: {df.explored.sum():_}\n')
             f.write(f'#configs explored mean: {int(df.explored.mean()):_}\n')
+            f.write(f'#configs explored on shared answers total: {df[finished_by_all].explored.sum():_}\n')
+            f.write(f'#configs explored on shared answers mean: {int(df[finished_by_all].explored.mean()):_}\n')
+            f.write(f'#configs explored on shared challenging answers total: {df[finished_by_all & challenging].explored.sum():_}\n')
+            f.write(f'#configs explored on shared challenging answers mean: {int(df[finished_by_all & challenging].explored.mean()):_}\n')
             f.write(f'#queries with any token elimination: {(df["tokens extrapolated"] > 0).sum()}\n')
             f.write(f'#tokens removed total: {df["tokens extrapolated"].sum():_}\n')
             f.write(f'#tokens removed mean: {int(df["tokens extrapolated"].mean()):_}\n')

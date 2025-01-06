@@ -11,6 +11,10 @@
 --- Tapaal:
 #configs explored total: 31_026_941_114
 #configs explored mean: 679_938
+#configs explored on shared answers total: 28_288_223_861
+#configs explored on shared answers mean: 880_923
+#configs explored on shared challenging answers total: 5_717_266_466
+#configs explored on shared challenging answers mean: 16_668_415
 #queries with any token elimination: 0
 #tokens removed total: 0
 #tokens removed mean: 0
@@ -19,6 +23,10 @@
 --- Static:
 #configs explored total: 30_866_040_813
 #configs explored mean: 676_412
+#configs explored on shared answers total: 27_815_113_623
+#configs explored on shared answers mean: 866_190
+#configs explored on shared challenging answers total: 5_272_201_791
+#configs explored on shared challenging answers mean: 15_370_850
 #queries with any token elimination: 2672
 #tokens removed total: 430_649_650_372
 #tokens removed mean: 9_437_448
@@ -27,6 +35,10 @@
 --- Dynamic:
 #configs explored total: 27_016_517_260
 #configs explored mean: 592_052
+#configs explored on shared answers total: 25_929_980_748
+#configs explored on shared answers mean: 807_485
+#configs explored on shared challenging answers total: 3_504_703_449
+#configs explored on shared challenging answers mean: 10_217_794
 #queries with any token elimination: 4226
 #tokens removed total: 461_372_761_616
 #tokens removed mean: 10_110_728

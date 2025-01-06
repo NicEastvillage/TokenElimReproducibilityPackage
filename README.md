@@ -10,7 +10,7 @@ The package was tested using WSL2.
 ## Prerequisites
 
 - Bash
-- Python 3.10
+- Python 3.10+
 - tar
 
 ## Instructions
