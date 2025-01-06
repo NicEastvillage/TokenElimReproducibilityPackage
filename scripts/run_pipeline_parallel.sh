@@ -1,8 +1,11 @@
 #!/bin/bash
 
-NAME=$1
-BIN=$2
-METHOD=$3
+NAME="$1"
+BIN="$2"
+METHOD="$3"
+TIMEOUT="$4"
+STEPSIZE="$5"
+QUERY_LIMIT="$6"
 
 OPTIONS=" "
 
@@ -29,6 +32,19 @@ elif ! [[ "$METHOD" =~ ^(tapaal|dynamic|static)$ ]] ; then
   exit
 fi
 
+if [ -z "$TIMEOUT" ] ; then
+	echo "Missing timeout"
+	exit
+fi
+
+if [ -z "$STEPSIZE" ] ; then
+  STEPSIZE=1
+fi
+
+if [ -z "$QUERY_LIMIT" ] ; then
+  QUERY_LIMIT=16
+fi
+
 MODELS_DIR="../MCC2023-CTL"
 LOGS_DIR="../logs/$NAME"
 
@@ -45,15 +61,21 @@ function process_queries() {
     MODEL=$(basename "${models[$i]}")
     for CATEGORY in "CTLCardinality" "CTLFireability"; do
       mkdir -p "$LOGS_DIR/$MODEL/$CATEGORY"
-      ./run_single.sh $NAME $BIN "$OPTIONS" $METHOD $MODEL $CATEGORY 1 10
+      for Q in $(seq 1 $QUERY_LIMIT) ; do
+        ./run_single.sh $NAME $BIN "$OPTIONS" $METHOD $MODEL $CATEGORY $Q $TIMEOUT
+      done
     done
   done
 }
 
-# Every 15th model, 3 processes in parallel
-process_queries 0 45 &
-process_queries 15 45 &
-process_queries 30 45 &
+let "STEP_ONE=$STEPSIZE*1"
+let "STEP_TWO=$STEPSIZE*2"
+let "STEP_THREE=$STEPSIZE*3"
+
+# Every $STEPSZIE'th model, 3 processes in parallel
+process_queries 0         $STEP_THREE &
+process_queries $STEP_ONE $STEP_THREE &
+process_queries $STEP_TWO $STEP_THREE &
 
 wait
 

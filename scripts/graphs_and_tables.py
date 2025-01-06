@@ -301,6 +301,7 @@ def main(named_csvs):
     assert len(df[df.satisfied == 'error']) == 0, 'ERRORS DETECTED'
     print('❤ Dataset contains no errors')
 
+    OUT_DIR.mkdir(exist_ok=True)
     answers(df)
     answers(df[df.challenging], file_postfix='_challenging')
     unique_answers(df)

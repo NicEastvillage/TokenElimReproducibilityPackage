@@ -1,11 +1,11 @@
 # Token Elimination Reproducibility Package
 
-This is a reproducibility package for the paper 'Token Elimination in Model Checking of Petri Nets' by Nicolaj Ø. Jensen, Jiri Srba, and Kim G. Larsen.
+This is a reproducibility package for the paper 'Token Elimination in Model Checking of Petri Nets' TACAS'25 by Nicolaj Ø. Jensen, Jiri Srba, and Kim G. Larsen.
 
 The package contains the models, queries, and binary used to produce the results of the paper as well as scripts to reproduce the graphs and tables.
-Due to the size of the benchmark, reproducing the data takes a significant amount of time, and we therefore include the data used for the paper's graphs and tables in the package.
+Due to the size of the benchmark, reproducing the data takes a significant amount of time, and we therefore also include the data used for the paper's graphs and tables in the package.
 
-The package was tested using WSL2.
+The package was tested using WSL2 and [TACAS'23 AE VM](https://zenodo.org/records/7113223).
 
 ## Prerequisites
 
@@ -17,60 +17,51 @@ The package was tested using WSL2.
 
 ### Setup
 
-Setup permissions:
-- For the Bash scripts: `chmod u+x scripts/*.sh`
-- For the Python scripts: `chmod u+x scripts/*.py`
-- For the verifypn binary: `chmod u+x bin/*`
+*Expected run time: 4 minutes (shorter on subsequent runs)*
 
-Setup to reproduce data:
-- Extract models and queries: `tar -xvf MCC2023-CTL.tar.gz`  (*Expected run time: 3 minutes*)
+Run `./scripts/setup.sh`
 
-Setup to construct graphs and tables:
-- Setup Python virtual environment: `python -m venv .venv`
-- Activate the virtual environment: `source .venv/bin/activate`
-- Install Python packages: `pip install -r requirements.txt`
+### Test pipeline (Short early review)
+
+*Expected run time: 20 minutes*
+
+Run `./scripts/run_mini.sh`
+
+This pipeline is intended for verifying that the artifact works.
+The pipeline only runs a few queries in total and will not produce meaningful results.
 
 ### Reproduce data (full)
 
-*Expected run time: 200-300 days (per method)*
+*Expected run time: 200-300 days*
 
 Steps:
 
-- Navigate to the `scripts/` directory: `cd scripts`
-- Run pipeline: `./run_pipeline.sh <name> ../bin/verifypn-tokelim-linux64 <method>` where `<name>` is the desired name of the output, and `<method>` is either `tapaal`, `dynamic`, or `static`. We advice to include the method in the name too, e.g. 'ae_tapaal'.
-  - This will produce a log file for each query at `logs/<name>/[model]/[category]/[query_index].log` and a csv file `data/<name>.csv` (semicolon separated) with all the extracted data.
-  - You can run the three methods in parallel using: `./run_pipeline.sh ae_tapaal ../bin/verifypn-tokelim-linux64 tapaal & ./run_pipeline.sh ae_dynamic ../bin/verifypn-tokelim-linux64 dynamic & ./run_pipeline.sh ae_static ../bin/verifypn-tokelim-linux64 static &`
+Run `./scripts/run_full.sh`
 
-This pipeline runs each query in `MCC2023-CTL` sequentially and will take a _very long time_.
+This pipeline runs each query in `MCC2023-CTL` and will take a _very long time_.
 Therefore, we have included the data files used in the paper in this reproducibility package: `data/demo_tapaal.csv`, `data/demo_dynamic.csv`, and `data/demo_static.csv`.
 You may also consider producing the data partially. See the section below.
 
-If you wish to rerun the entire benchmark, we recommend running the individual queries in parallel. However, we do not include scripts to do so.
+If you wish to rerun the entire benchmark, we recommend running the queries in parallel. However, we do not include scripts to do so.
 See `scripts/run_single.sh` to run a single query and `scripts/extract.sh` to extract the data from the log files.
 The time/memory limits can be found in `scripts/run_single.sh` (30 minutes and 15 GB by default).
 
 ### Reproduce data (partial)
 
-*Expected run time: 6 hours (per method)*
+*Expected run time: 6 hours*
 
-Steps:
+Run `./scripts/run_partial.sh`
 
-- Navigate to the `scripts/` directory: `cd scripts`
-- Run pipeline: `./run_pipeline_partial.sh <name> ../bin/verifypn-tokelim-linux64 <method>` where `<name>` is the desired name of the output, and `<method>` is either `tapaal`, `dynamic`, or `static`. We advise to include the method in the name too, e.g. 'ae_tapaal'.
-  - This will produce a log file for each query at `logs/<name>/[model]/[category]/[query_index].log` and a csv file `data/<name>.csv` (semicolon separated) with all the extracted data.
-  - (Recommended) You can run the three methods in parallel using: `./run_pipeline_partial.sh ae_tapaal ../bin/verifypn-tokelim-linux64 tapaal & ./run_pipeline_partial.sh ae_static ../bin/verifypn-tokelim-linux64 static & ./run_pipeline_partial.sh ae_dynamic ../bin/verifypn-tokelim-linux64 dynamic &`
-
-This partial pipeline runs the first query of the two CTL categories for every 15th model with a timeout of 10 minutes.
+This partial pipeline runs the first query of every 15th model with a timeout of 10 minutes.
 Note that the shorter timeout may be a disadvantage for the dynamic and static token-elimination methods.
 
-### Graphs and tables
+### Generate graphs and tables
 
 *Expected run time: 20 seconds*
 
 Steps:
 
-- Navigate to the `scripts/` directory: `cd scripts`
-- Run `python graphs_and_tables.py`
+- Run `python scripts/graphs_and_tables.py`
   - By default, the demo data (the data used in the paper) is used. To use your own data, the Python script must be
     given a series of arguments on the form 'name=file' where 'name' is the display name of the data and 'file' is
     the name of the file in `data/`. You must provide at least two data files and the first one must be named Tapaal
@@ -96,6 +87,6 @@ The models and queries found in `MCC2023-CTL.tar.gz` is a subset of the models a
 Spefically, the tarball contains the `pnml` Petri net model files and the CTL cardinality and fireability queries in `xml` form.
 Further details about the Model Checking Contest 2023 as well as the models and queries can be found at https://mcc.lip6.fr/2023/.
 
-### Scripts
+### Other
 
-The Bash and Python scripts in the directory `scripts/` are distributed under no license.
+The remaining parts of this artefact such as the scripts are distributed under the MIT license. See `LICENSE`.
