@@ -1,16 +1,18 @@
 # Token Elimination Reproducibility Package
 
-This is a reproducibility package for the paper 'Token Elimination in Model Checking of Petri Nets' TACAS'25 by Nicolaj Ø. Jensen, Jiri Srba, and Kim G. Larsen.
+This is a reproducibility package for the paper 'Token Elimination in Model Checking of Petri Nets' TACAS'25 by Nicolaj Ø. Jensen, Kim G. Larsen, and Jiri Srba.
 
 The package contains the models, queries, and binary used to produce the results of the paper as well as scripts to reproduce the graphs and tables.
 Due to the size of the benchmark, reproducing the data takes a significant amount of time, and we therefore also include the data used for the paper's graphs and tables in the package.
 
 The package was tested using WSL2 and [TACAS'23 AE VM](https://zenodo.org/records/7113223).
 
+DOI: 10.5281/zenodo.14608439
+
 ## Prerequisites
 
 - Bash
-- Python 3.10+
+- Python 3.10 (`python3` and `pip`)
 - tar
 
 ## Instructions
@@ -39,8 +41,6 @@ The pipeline only runs a few queries in total and will not produce meaningful re
 ### Reproduce data (full)
 
 *Expected run time: 200-300 days*
-
-Steps:
 
 Run `./scripts/run_full.sh`
 
@@ -71,7 +71,7 @@ Steps:
   - By default, the demo data (the data used in the paper) is used. To use your own data, the Python script must be
     given a series of arguments on the form 'name=file' where 'name' is the display name of the data and 'file' is
     the name of the file in `data/`. You must provide at least two data files and the first one must be named Tapaal
-    as it will be used as the baseline for some graphs. Example:
+    as it will be used as the baseline for some graphs. If you did not modify the pipeline scripts, use the command:
     `python3 graphs_and_tables.py Tapaal=ae_tapaal.csv Static=ae_static.csv Dynamic=ae_dynamic.csv`.
   - Some deprecation warnings may appear. Those are expected.
 - Graphs and tables can now be found in `output/`.
@@ -95,4 +95,4 @@ Further details about the Model Checking Contest 2023 as well as the models and 
 
 ### Other
 
-The remaining parts of this artefact such as the scripts are distributed under the MIT license. See `LICENSE`.
+The remaining parts of this reproducibility package such as the scripts are distributed under the MIT license. See `LICENSE`.
